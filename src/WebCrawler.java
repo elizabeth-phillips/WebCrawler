@@ -9,41 +9,29 @@ import org.jsoup.select.Elements;
 
 public class WebCrawler {
     private String phraseToSearchFor;
-    private TreeNode homepage;
     private Set<String> pagesVisited = new HashSet<>();
     private List<TreeNode> pagesToVisit = new ArrayList<>();
-    private ArrayList< ArrayList<TreeNode>> depths = new ArrayList<>();
-    private int currDepth;
     private int MAX_DEPTH;
+    private Tree tree;
 
     public WebCrawler(String homePage, String searchingFor, int MAX_DEPTH){
-        this.homepage = new TreeNode(homePage);
-        this.pagesToVisit.add(this.homepage);
-        depths.add(new ArrayList<TreeNode>(){});
-        depths.get(this.homepage.getDepth()).add(this.homepage);
+        TreeNode homepage = new TreeNode(homePage);
+        this.pagesToVisit.add(homepage);
+        tree = new Tree(homepage);
         this.phraseToSearchFor = searchingFor;
         this.MAX_DEPTH = MAX_DEPTH;
     }
 
     public void search(){
-        do{
-            processPage(pagesToVisit.get(0));
+        while(pagesToVisit.size() != 0){
+            if(pagesToVisit.get(0).getDepth() <= MAX_DEPTH) {
+                processPage(pagesToVisit.get(0));
+                System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited.size(), pagesToVisit.size()));
+            }
         }
-        while(pagesToVisit.get(0).getDepth() <= MAX_DEPTH && pagesToVisit.size() != 0);
-
-        System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited.size(), (pagesToVisit.size()-pagesVisited.size())));
-        processPage(pagesToVisit.get(0));
-        System.out.println(depths);
-
-
-        currDepth = -1;
-        printTree();
     }
 
     private void processPage(TreeNode currURL){
-        if(!currURL.equals(this.homepage)) {
-            System.out.println(String.format("parent -> %s link -> %s depth -> %s", currURL.getParent().getData(), currURL.getData(), currURL.getDepth()));
-        }
         boolean match = currURL.getChildrenData().contains(currURL.getData());   // Stops cyclical dependencies
 
         if(!match){
@@ -54,35 +42,76 @@ public class WebCrawler {
 
                 for(Element link: questions){
                     String nodeURL = link.attr("abs:href");
-                    if(nodeURL.contains(this.phraseToSearchFor) && !currURL.getChildrenData().contains(nodeURL)) {                                   // If the link contains the current searchingFor
-                        currURL.addChild(nodeURL);     // Makes the current link into a Tree Node
+                    if(nodeURL.contains(this.phraseToSearchFor) && !currURL.getChildrenData().contains(nodeURL)) {
+                        currURL.addChild(nodeURL);
                     }
+
                 }
             }
-            catch(IOException ex){
-//                System.out.println(ex.getMessage());
+            catch(IOException ex){}
+        }
+
+
+        System.out.println(currURL);
+        for (TreeNode child: currURL.getChildren()){
+            if(canAddToPagesToVisit(child) && canAddToTree(child)){
+                pagesToVisit.add(child);
+                tree.addNode(child);
             }
         }
-        pagesToVisit.addAll(currURL.getChildren());
+
         pagesToVisit.remove(currURL);
         pagesVisited.add(currURL.getData());
     }
 
-
-    private void printTree(){
-        for(int i = 0; i < depths.size(); i++){
-            System.out.println("====> Depth" + i);
-            for(TreeNode currNode: depths.get(i)){
-                System.out.println(String.format("%s -> %s -> %s", (currNode.getParent() == null) ? "no parent" : currNode.getParent().getData(), currNode.getData(), currNode.getChildrenData()));
+    private boolean canAddToPagesToVisit(TreeNode node){
+        for(TreeNode curr: pagesToVisit){
+            if(curr.getParent() != null && curr.getParent().getData().equals(node.getParent().getData()) && curr.getData().equals(node.getData())){
+                return false;
             }
         }
+        return true;
+    }
+
+    private boolean canAddToTree(TreeNode node){
+        for(TreeNode curr: tree.getTree()){
+            if(curr.getParent() != null && curr.getParent().getData().equals(node.getParent().getData()) && curr.getData().equals(node.getData())){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public Tree getTree(){
+        return tree;
     }
 
 
-    private ArrayList<TreeNode> getAllFromDepth(int depth){
-        TreeNode temp = this.homepage;
-        while(temp.getDepth() != depth){
-            temp = temp.get
+    public class Tree {
+        private List<TreeNode> tree;
+
+        private Tree(TreeNode root){
+            tree = new LinkedList<>();
+            tree.add(root);
+        }
+
+        private List<TreeNode> getTree() {
+            return tree;
+        }
+
+        private void addNode(TreeNode node){
+            tree.add(node);
+        }
+
+        protected void printTree(){
+            int depth = -1;
+            for(TreeNode currNode: tree){
+                if (currNode.getDepth() != depth){
+                    depth = currNode.getDepth();
+                    System.out.println(String.format("============ Depth: %s", currNode.getDepth()));
+                }
+                System.out.println(currNode);
+            }
         }
     }
 
@@ -96,6 +125,7 @@ public class WebCrawler {
 
         private TreeNode(String data) {
             this.data = data;
+            this.parent = null;
             this.children = new HashSet<>();
             this.childrenData = new ArrayList<>();
         }
@@ -104,16 +134,25 @@ public class WebCrawler {
             TreeNode childNode = new TreeNode(child);
             childNode.setDepth(this.depth+1);
             childNode.setParent(this);
-            if(childNode.getDepth() == depths.size()){
-                depths.add(new ArrayList<TreeNode>(){});
-            }
-
-            depths.get(childNode.getDepth()).add(childNode);
             this.children.add(childNode);
             this.childrenData.add(child);
             return childNode;
         }
 
+        private void removeChild(TreeNode child){
+            this.children.remove(child);
+            this.childrenData.remove(child.getData());
+        }
+
+        @Override
+        public String toString(){
+            String output = String.format("Depth %s -> ", this.getDepth());
+            if(this.getParent() != null) {
+                output += String.format("%s -> ", this.getParent().getData());
+            }
+            output += String.format("%s -> %s", this.getData(), this.getChildrenData());
+            return output;
+        }
 
         private Set<TreeNode> getChildren() {
             return children;
@@ -145,6 +184,20 @@ public class WebCrawler {
 
         private void setDepth(int depth) {
             this.depth = depth;
+        }
+
+        public boolean nodesEqual(Object other){
+            if(!other.getClass().equals(this.getClass())){
+                return false;
+            }
+            TreeNode otherNode = (TreeNode) other;
+            if(!this.getData().equals(otherNode.getData())){
+                return false;
+            }
+            if(this.getParent() != null && !this.getParent().getData().equals(otherNode.getParent().getData())){
+                return false;
+            }
+            return this.getChildrenData().equals(otherNode.getChildrenData());
         }
 
     }
