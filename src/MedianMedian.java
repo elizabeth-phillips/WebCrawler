@@ -1,69 +1,33 @@
-
 import java.util.ArrayList;
-        import java.util.Random;
-        import java.util.Scanner;
+import java.util.Random;
 
-/**
- *
- * @author Jason
- */
 public class MedianMedian {
 
-    public static void main(String[] args) {
-        int arraySize;
-        Random rand = new Random();
-        Scanner input = new Scanner(System.in);
-        System.out.println("Enter an integer between 1 and 100,000: ");
-        arraySize = input.nextInt();
-        while (arraySize < 1 || arraySize > 100000) {
-            System.out.println("Enter an integer between 1 and 100,000: ");
-            arraySize = input.nextInt();
-
-        }
-        int demoArray[] = new int[arraySize];
-        for (int i = 0; i < demoArray.length; i++) {
-            demoArray[i] = rand.nextInt(arraySize); //random nums up to size of array
-        }
-        printArray(demoArray);
-        System.out.println("The median of medians of your Array is: " + median(demoArray));
-    }
-
-    public static int median(int a[]) {
+    public static int median(int a[], int groupSize) {
         ArrayList<Integer> medians = new ArrayList();
         int medOfMed = 0;
-        int groupSize;
-        Scanner input = new Scanner(System.in);
-        System.out.println("Enter 3, 5, or 7 for group size");
-        groupSize = input.nextInt();
-        while (!(groupSize == 3 || groupSize == 5 || groupSize == 7)) {
-            System.out.println("Enter 3, 5, or 7 for group size");
-            groupSize = input.nextInt();
-        }
-        //if total array length is less than group size then just find median
         if (a.length < groupSize) {
             medOfMed = subMedian(a, 0, a.length);
-        }
-        else{
+        } else {
             int sumMedians = 0;
-            for(int i = 0; i < a.length;){
+            for (int i = 0; i < a.length;) {
 
-                if((i+=groupSize) < a.length){
-                    medians.add(subMedian(a,i, i+groupSize));
-                    i+=groupSize;
-                }
-                else if (a.length > i){
+                if ((i += groupSize) < a.length - groupSize) {
+                    medians.add(subMedian(a, i, i + groupSize));
+                } else if (a.length > i) {
                     medians.add(subMedian(a, i, a.length));
                     i = a.length;
-                }
-                else{
-                    medians.add(a[a.length-1]);
+                } else {
+                    medians.add(a[a.length - 1]);
+                    i = a.length;
                 }
             }
-            for(int j = 0; j < medians.size();j++){
-                sumMedians+=medians.get(j);
+            for (int j = 0; j < medians.size(); j++) {
+                sumMedians += medians.get(j);
             }
-            medOfMed = sumMedians/medians.size();
+            medOfMed = sumMedians / medians.size();
         }
+       // System.out.println("Median: " + medOfMed);
         return medOfMed;
     }
 
@@ -77,19 +41,69 @@ public class MedianMedian {
         }
         int length = b.length;
         int median = 0;
-        //sort subArray (inserttion sort)
         insertionSort(b);
-        printArray(b);
-        if (length % 2 == 0) {
+        
+        if(length == 2){
+            median = b[(length / 2)];
+        }
+        else if (length % 2 == 0) {
             median = (b[((length / 2))] + b[(length / 2) + 1]) / 2;
         } else {
             median = b[(length / 2)];
         }
-        System.out.println("subMedian: " + median);
         return median;
 
     }
+    
+    //looking for i'th smallest element of the array
+    public static int randomizedSelect(int [] a, int p, int r, int i){
+        if(p == r){
+            return a[p];
+        }
+        int q = randomizedPartition(a, p, r);
+        int k = q - p + 1;
+        if(i == k){
+            return a[p];
+        }        
+        if(i<k){
+            return randomizedSelect(a, p, q-1, i);
+        }        
+        else {
+            return randomizedSelect(a, q+1, r, i-k);
+        }
+    }
 
+    public static int randomizedPartition(int[] a, int p, int r) {       
+        int tmp;
+        Random rand = new Random();
+        int swap = rand.nextInt(r);
+        //System.out.println("P: " + p + " R: " + r);
+        tmp = a[p];
+        a[p] = a[swap];
+        a[swap] = tmp;
+        int i = p, j = r;
+
+        int pivot = a[(p + r) / 2];
+        while (i <= j) {
+            while (a[i] < pivot) {
+                i++;
+            }
+            while (a[j] > pivot) {
+                j--;
+            }
+            if (i <= j) {
+                tmp = a[i];
+                a[i] = a[j];
+                a[j] = tmp;
+                i++;
+                j--;
+            }
+        }
+        return i;
+    }
+    
+  
+    
     public static void insertionSort(int[] a) {
         for (int i = 1; i < a.length; i++) {
             int min = a[i];
@@ -100,40 +114,5 @@ public class MedianMedian {
             }
             a[j + 1] = min;
         }
-
-    }
-
-    //print array set up to matrix print values up to 100,000
-    public static void printArray(int[] a) {
-        for (int i = 0; i < a.length; i++) {
-            switch (Integer.toString(a[i]).length()) {
-                case 6:
-                    System.out.print(a[i] + " ");
-                    break;
-                case 5:
-                    System.out.print(a[i] + "  ");
-                    break;
-                case 4:
-                    System.out.print(a[i] + "   ");
-                    break;
-                case 3:
-                    System.out.print(a[i] + "    ");
-                    break;
-                case 2:
-                    System.out.print(a[i] + "     ");
-                    break;
-                case 1:
-                    System.out.print(a[i] + "      ");
-                    break;
-                default:
-                    break;
-            }
-
-            if ((i > 0) && (i % 10 == 0)) {
-                System.out.println();
-            }
-        }
-        System.out.println();
-
-    }
+    } 
 }

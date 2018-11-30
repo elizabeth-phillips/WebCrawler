@@ -9,15 +9,15 @@ import org.jsoup.select.Elements;
 
 public class WebCrawler {
     private String phraseToSearchFor;
-    private Set<String> pagesVisited = new HashSet<>();
-    private List<TreeNode> pagesToVisit = new ArrayList<>();
+    private int pagesVisited = 0;
+    private List<Node> pagesToVisit = new ArrayList<>();
     private int MAX_DEPTH;
-    private Tree tree;
+    private Graph graph;
 
     public WebCrawler(String homePage, String searchingFor, int MAX_DEPTH){
-        TreeNode homepage = new TreeNode(homePage);
+        Node homepage = new Node(homePage);
         this.pagesToVisit.add(homepage);
-        tree = new Tree(homepage);
+        graph = new Graph(homepage);
         this.phraseToSearchFor = searchingFor;
         this.MAX_DEPTH = MAX_DEPTH;
     }
@@ -26,12 +26,12 @@ public class WebCrawler {
         while(pagesToVisit.size() != 0){
             if(pagesToVisit.get(0).getDepth() <= MAX_DEPTH) {
                 processPage(pagesToVisit.get(0));
-                System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited.size(), pagesToVisit.size()));
+                System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited, pagesToVisit.size()));
             }
         }
     }
 
-    private void processPage(TreeNode currURL){
+    private void processPage(Node currURL){
         boolean match = currURL.getChildrenData().contains(currURL.getData());   // Stops cyclical dependencies
 
         if(!match){
@@ -51,21 +51,20 @@ public class WebCrawler {
             catch(IOException ex){}
         }
 
-
         System.out.println(currURL);
-        for (TreeNode child: currURL.getChildren()){
-            if(canAddToPagesToVisit(child) && canAddToTree(child)){
+        for (Node child: currURL.getChildren()){
+            if(canAddToPagesToVisit(child) && canAddToGraph(child)){
                 pagesToVisit.add(child);
-                tree.addNode(child);
+                graph.addNode(child);
             }
         }
 
         pagesToVisit.remove(currURL);
-        pagesVisited.add(currURL.getData());
+        pagesVisited++;
     }
 
-    private boolean canAddToPagesToVisit(TreeNode node){
-        for(TreeNode curr: pagesToVisit){
+    private boolean canAddToPagesToVisit(Node node){
+        for(Node curr: pagesToVisit){
             if(curr.getParent() != null && curr.getParent().getData().equals(node.getParent().getData()) && curr.getData().equals(node.getData())){
                 return false;
             }
@@ -73,8 +72,8 @@ public class WebCrawler {
         return true;
     }
 
-    private boolean canAddToTree(TreeNode node){
-        for(TreeNode curr: tree.getTree()){
+    private boolean canAddToGraph(Node node){
+        for(Node curr: graph.getGraph()){
             if(curr.getParent() != null && curr.getParent().getData().equals(node.getParent().getData()) && curr.getData().equals(node.getData())){
                 return false;
             }
@@ -82,30 +81,72 @@ public class WebCrawler {
         return true;
     }
 
-    public Tree getTree(){
-        return tree;
+    public Graph getGraph(){
+        return graph;
+    }
+
+    private Map<Node, Boolean> vis = new HashMap<>();
+
+    private Map<Node, Node> prev = new HashMap<>();
+
+    public int compDist(Node start, Node finish){
+        List<Node> directions = new LinkedList<>();
+        Queue<Node> q = new LinkedList<>();
+        Node current = start;
+        q.add(current);
+        vis.put(current, true);
+        while(!q.isEmpty()){
+            current = q.remove();
+            if (current.equals(finish)){
+                break;
+            }else{
+                for(Node node : current.getChildren()){
+                    if(!vis.containsKey(node)){
+                        q.add(node);
+                        vis.put(node, true);
+                        prev.put(node, current);
+                    }
+                }
+            }
+        }
+        if (!current.equals(finish)){
+            return -1;
+        }
+        for(Node node = finish; node != null; node = prev.get(node)) {
+            directions.add(node);
+        }
+
+        return directions.size();
     }
 
 
-    public class Tree {
-        private List<TreeNode> tree;
+    public class Graph {
+        private List<Node> graph;
 
-        private Tree(TreeNode root){
-            tree = new LinkedList<>();
-            tree.add(root);
+        private Graph(Node root){
+            graph = new LinkedList<>();
+            graph.add(root);
         }
 
-        private List<TreeNode> getTree() {
-            return tree;
+        private List<Node> getGraph() {
+            return graph;
         }
 
-        private void addNode(TreeNode node){
-            tree.add(node);
+        public Node getNode(int index){
+            return graph.get(index);
         }
 
-        protected void printTree(){
+        protected int getSize(){
+            return graph.size();
+        }
+
+        private void addNode(Node node){
+            graph.add(node);
+        }
+
+        protected void printGraph(){
             int depth = -1;
-            for(TreeNode currNode: tree){
+            for(Node currNode: graph){
                 if (currNode.getDepth() != depth){
                     depth = currNode.getDepth();
                     System.out.println(String.format("============ Depth: %s", currNode.getDepth()));
@@ -115,23 +156,23 @@ public class WebCrawler {
         }
     }
 
-    private class TreeNode {
+    private class Node {
         String data;
-        TreeNode parent;
-        Set<TreeNode> children;
+        Node parent;
+        Set<Node> children;
         ArrayList<String> childrenData;
         int depth = 0;
 
 
-        private TreeNode(String data) {
+        private Node(String data) {
             this.data = data;
             this.parent = null;
             this.children = new HashSet<>();
             this.childrenData = new ArrayList<>();
         }
 
-        private TreeNode addChild(String child) {
-            TreeNode childNode = new TreeNode(child);
+        private Node addChild(String child) {
+            Node childNode = new Node(child);
             childNode.setDepth(this.depth+1);
             childNode.setParent(this);
             this.children.add(childNode);
@@ -139,7 +180,7 @@ public class WebCrawler {
             return childNode;
         }
 
-        private void removeChild(TreeNode child){
+        private void removeChild(Node child){
             this.children.remove(child);
             this.childrenData.remove(child.getData());
         }
@@ -154,7 +195,7 @@ public class WebCrawler {
             return output;
         }
 
-        private Set<TreeNode> getChildren() {
+        private Set<Node> getChildren() {
             return children;
         }
 
@@ -166,11 +207,11 @@ public class WebCrawler {
             this.data = data;
         }
 
-        private TreeNode getParent() {
+        private Node getParent() {
             return parent;
         }
 
-        private void setParent(TreeNode parent) {
+        private void setParent(Node parent) {
             this.parent = parent;
         }
 
@@ -190,7 +231,7 @@ public class WebCrawler {
             if(!other.getClass().equals(this.getClass())){
                 return false;
             }
-            TreeNode otherNode = (TreeNode) other;
+            Node otherNode = (Node) other;
             if(!this.getData().equals(otherNode.getData())){
                 return false;
             }
