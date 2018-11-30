@@ -20,11 +20,14 @@ public class SorterQuick {
 
         }
         int demoArray[] = new int[arraySize];
+        int demoArray2[] = new int[arraySize];
         for (int i = 0; i < demoArray.length; i++) {
-            demoArray[i] = rand.nextInt(arraySize); //random nums up to size of array
+            demoArray2[i] = demoArray[i] = rand.nextInt(arraySize); //random nums up to size of array
+           
         }
 
         printArray(demoArray);
+        
         boolean runMe = true;
         while (runMe) {
             System.out.println("Choose a number from the following menu: ");
@@ -46,6 +49,8 @@ public class SorterQuick {
                 System.out.println(e + " :That's not a number!");
                 menu = 0;
             }
+            //Want to use the same array, but the unsorted version
+            System.arraycopy(demoArray2, 0, demoArray, 0, demoArray.length);
             switch (menu) {
                 case 1:
                     System.out.println("Enter 3, 5, or 7 for group size");
@@ -55,7 +60,7 @@ public class SorterQuick {
                         groupSize = input.nextInt();
                     }
                     timeStart = System.currentTimeMillis();
-                    quickSortMedian(demoArray, 0, demoArray.length - 1, groupSize);
+                    quickSortMedian(demoArray, 0, demoArray.length-1, groupSize);
                     timeFinish = System.currentTimeMillis();
                     runTime = timeFinish - timeStart;
                     printArray(demoArray);
@@ -96,6 +101,7 @@ public class SorterQuick {
                     quickSortRandomSelect(demoArray, 0, demoArray.length - 1, k);
                     timeFinish = System.currentTimeMillis();
                     runTime = timeFinish - timeStart;
+                    printArray(demoArray);
                     System.out.println("Your Alg ran Quicksort with Random Select 'n/2' ran in : " + runTime + " milliseconds!");
 
                     break;
@@ -139,18 +145,19 @@ public class SorterQuick {
          * method to get median of median of current sub-array
          */
         int brr[] = new int[right - left];
-        System.out.println("BRR: " + brr.length);
+        
         for (int m = 0; m < brr.length; m++) {
             brr[m] = arr[n];
             n++;
         }
+     
         int pivot = MedianMedian.median(brr, groupSize);
-
+        //System.out.println("Pivot: " + pivot);
         while (i <= j) {
             while (arr[i] < pivot) {
                 i++;
             }
-            while (arr[j] > pivot) {
+            while (arr[j] > pivot) {  
                 j--;
             }
             if (i <= j) {
@@ -182,7 +189,7 @@ public class SorterQuick {
         int i = left, j = right;
         int tmp;
         Random rand = new Random();
-        int pivotIndex = rand.nextInt(right + 1);
+        int pivotIndex = rand.nextInt(right-left)+ left;
         //System.out.println(arr[pivotIndex]);
         int pivot = arr[pivotIndex];
 

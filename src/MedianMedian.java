@@ -9,7 +9,7 @@ public class MedianMedian {
         if (a.length < groupSize) {
             medOfMed = subMedian(a, 0, a.length);
         } else {
-            int sumMedians = 0;
+          
             for (int i = 0; i < a.length;) {
 
                 if ((i += groupSize) < a.length - groupSize) {
@@ -22,12 +22,16 @@ public class MedianMedian {
                     i = a.length;
                 }
             }
-            for (int j = 0; j < medians.size(); j++) {
-                sumMedians += medians.get(j);
+
+            medians.sort(null);
+            if (medians.size() == 2) {
+                medOfMed = medians.get(medians.size() / 2);
+            } else if (medians.size() % 2 == 0) {
+                medOfMed = (medians.get(medians.size() / 2) + medians.get(medians.size() / 2) + 1) / 2;
+            } else {
+                medOfMed = medians.get(medians.size() / 2);
             }
-            medOfMed = sumMedians / medians.size();
         }
-       // System.out.println("Median: " + medOfMed);
         return medOfMed;
     }
 
@@ -42,11 +46,10 @@ public class MedianMedian {
         int length = b.length;
         int median = 0;
         insertionSort(b);
-        
-        if(length == 2){
+
+        if (length == 2) {
             median = b[(length / 2)];
-        }
-        else if (length % 2 == 0) {
+        } else if (length % 2 == 0) {
             median = (b[((length / 2))] + b[(length / 2) + 1]) / 2;
         } else {
             median = b[(length / 2)];
@@ -54,30 +57,28 @@ public class MedianMedian {
         return median;
 
     }
-    
+
     //looking for i'th smallest element of the array
-    public static int randomizedSelect(int [] a, int p, int r, int i){
-        if(p == r){
+    public static int randomizedSelect(int[] a, int p, int r, int i) {
+        if (p == r) {
             return a[p];
         }
         int q = randomizedPartition(a, p, r);
         int k = q - p + 1;
-        if(i == k){
+        if (i == k) {
             return a[p];
-        }        
-        if(i<k){
-            return randomizedSelect(a, p, q-1, i);
-        }        
-        else {
-            return randomizedSelect(a, q+1, r, i-k);
+        }
+        if (i < k) {
+            return randomizedSelect(a, p, q - 1, i);
+        } else {
+            return randomizedSelect(a, q + 1, r, i - k);
         }
     }
 
-    public static int randomizedPartition(int[] a, int p, int r) {       
+    public static int randomizedPartition(int[] a, int p, int r) {
         int tmp;
         Random rand = new Random();
         int swap = rand.nextInt(r);
-        //System.out.println("P: " + p + " R: " + r);
         tmp = a[p];
         a[p] = a[swap];
         a[swap] = tmp;
@@ -101,9 +102,7 @@ public class MedianMedian {
         }
         return i;
     }
-    
-  
-    
+
     public static void insertionSort(int[] a) {
         for (int i = 1; i < a.length; i++) {
             int min = a[i];
@@ -114,5 +113,5 @@ public class MedianMedian {
             }
             a[j + 1] = min;
         }
-    } 
+    }
 }
