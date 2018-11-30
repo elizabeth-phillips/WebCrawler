@@ -170,13 +170,12 @@ public class SorterQuick {
         return i;
     }
 
-    public static int[] quickSortRandom(int[] a, int low, int high) {
+    public static void quickSortRandom(int[] a, int low, int high) {
         if (low < high) {
             int pi = partitionRandom(a, low, high);
             quickSortRandom(a, low, pi - 1);
             quickSortRandom(a, pi + 1, high);
         }
-        return a;
     }
 
     public static int partitionRandom(int arr[], int left, int right) {

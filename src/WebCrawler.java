@@ -9,7 +9,7 @@ import org.jsoup.select.Elements;
 
 public class WebCrawler {
     private String phraseToSearchFor;
-    private int pagesVisited = 0;
+    private Set<String> pagesVisited = new HashSet<>();
     private List<Node> pagesToVisit = new ArrayList<>();
     private int MAX_DEPTH;
     private Graph graph;
@@ -26,7 +26,7 @@ public class WebCrawler {
         while(pagesToVisit.size() != 0){
             if(pagesToVisit.get(0).getDepth() <= MAX_DEPTH) {
                 processPage(pagesToVisit.get(0));
-                System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited, pagesToVisit.size()));
+                System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited.size(), pagesToVisit.size()));
             }
         }
     }
@@ -60,7 +60,7 @@ public class WebCrawler {
         }
 
         pagesToVisit.remove(currURL);
-        pagesVisited++;
+        pagesVisited.add(currURL.data);
     }
 
     private boolean canAddToPagesToVisit(Node node){
@@ -72,29 +72,54 @@ public class WebCrawler {
         return true;
     }
 
+
     private boolean canAddToGraph(Node node){
-        for(Node curr: graph.getGraph()){
-            if(curr.getParent() != null && curr.getParent().getData().equals(node.getParent().getData()) && curr.getData().equals(node.getData())){
-                return false;
+        if(!pagesVisited.contains(node.getData())) {
+            for (Node curr : graph.getGraph()) {
+                if (curr.getParent() != null && curr.getParent().getData().equals(node.getParent().getData()) && curr.getData().equals(node.getData())) {
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
+        else{
+            return false;
+        }
     }
 
     public Graph getGraph(){
         return graph;
     }
 
-    private Map<Node, Boolean> vis = new HashMap<>();
+    public void printAllDist(){
+        int maxDist = -1;
+        Node maxStart = new Node(getGraph().getNode(0).getData());
+        Node maxFinish = new Node(getGraph().getNode(0).getData());
+        int currDist = 0;
+        for(Node i: graph.getGraph()){
+            for(Node j: graph.getGraph()){
+                currDist = compDist(i,j);
+//                if(currDist >= 0) System.out.println(String.format("Start: %s  Finish: %s  -  Distance: %s", i.getData(), j.getData(), currDist));
+                if(currDist > maxDist){
+                    maxDist = currDist;
+                    maxStart = i;
+                    maxFinish = j;
+                }
+            }
+        }
+        System.out.println(String.format("%s   Start: %s  Finish: %s", maxDist, maxStart.getData(), maxFinish.getData()));
+    }
 
-    private Map<Node, Node> prev = new HashMap<>();
 
     public int compDist(Node start, Node finish){
         List<Node> directions = new LinkedList<>();
         Queue<Node> q = new LinkedList<>();
+        Map<Node, Boolean> vis = new HashMap<>();
+        Map<Node, Node> prev = new HashMap<>();
         Node current = start;
         q.add(current);
         vis.put(current, true);
+
         while(!q.isEmpty()){
             current = q.remove();
             if (current.equals(finish)){
@@ -116,7 +141,7 @@ public class WebCrawler {
             directions.add(node);
         }
 
-        return directions.size();
+        return directions.size()-1;
     }
 
 
@@ -156,7 +181,7 @@ public class WebCrawler {
         }
     }
 
-    private class Node {
+    public class Node {
         String data;
         Node parent;
         Set<Node> children;
