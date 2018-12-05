@@ -5,7 +5,7 @@ public class WebCrawlerTester {
     public static void main(String[] args) {
         String mainPage = "https://cs.txstate.edu";
         String searchingFor = "https://cs.txstate.edu/about_us/";
-        WebCrawler search = new WebCrawler(mainPage, searchingFor, 10);
+        WebCrawler search = new WebCrawler(mainPage, searchingFor);
         search.search();
         Scanner input = new Scanner(System.in);
         System.out.println("Would you like to print the resulting graph? 1 <- Yes, Any other key <- No");

@@ -11,23 +11,20 @@ public class WebCrawler {
     private String phraseToSearchFor;
     private Set<String> pagesVisited = new HashSet<>();
     private List<Node> pagesToVisit = new ArrayList<>();
-    private int MAX_DEPTH;
     private Graph graph;
 
-    public WebCrawler(String homePage, String searchingFor, int MAX_DEPTH){
+    public WebCrawler(String homePage, String searchingFor){
         Node homepage = new Node(homePage);
         this.pagesToVisit.add(homepage);
         graph = new Graph(homepage);
         this.phraseToSearchFor = searchingFor;
-        this.MAX_DEPTH = MAX_DEPTH;
     }
 
     public void search(){
         while(pagesToVisit.size() != 0){
-            if(pagesToVisit.get(0).getDepth() <= MAX_DEPTH) {
-                processPage(pagesToVisit.get(0));
-                System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited.size(), pagesToVisit.size()));
-            }
+            graph.doesContain(pagesToVisit.get(0).getData());
+            processPage(pagesToVisit.get(0));
+            System.out.println(String.format("Now have visited %s links! %s links left to visit", pagesVisited.size(), pagesToVisit.size()));
         }
     }
 
@@ -161,6 +158,23 @@ public class WebCrawler {
             return graph.get(index);
         }
 
+        public Node getNode(String url){
+            for(Node n: graph){
+                if(n.getData().equals(url)){
+                    return n;
+                }
+            }
+            return null;
+        }
+
+        public boolean doesContain(String url){
+            if(getNode(url) != null){
+//                System.out.println("already here" + pagesToVisit.toString());
+                return true;
+            }
+            return false;
+        }
+
         protected int getSize(){
             return graph.size();
         }
@@ -170,12 +184,7 @@ public class WebCrawler {
         }
 
         protected void printGraph(){
-            int depth = -1;
             for(Node currNode: graph){
-                if (currNode.getDepth() != depth){
-                    depth = currNode.getDepth();
-                    System.out.println(String.format("============ Depth: %s", currNode.getDepth()));
-                }
                 System.out.println(currNode);
             }
         }
@@ -186,7 +195,6 @@ public class WebCrawler {
         Node parent;
         Set<Node> children;
         ArrayList<String> childrenData;
-        int depth = 0;
 
 
         private Node(String data) {
@@ -198,7 +206,6 @@ public class WebCrawler {
 
         private Node addChild(String child) {
             Node childNode = new Node(child);
-            childNode.setDepth(this.depth+1);
             childNode.setParent(this);
             this.children.add(childNode);
             this.childrenData.add(child);
@@ -212,7 +219,7 @@ public class WebCrawler {
 
         @Override
         public String toString(){
-            String output = String.format("Depth %s -> ", this.getDepth());
+            String output = ""; //= String.format("Depth %s -> ", this.getDepth());
             if(this.getParent() != null) {
                 output += String.format("%s -> ", this.getParent().getData());
             }
@@ -242,14 +249,6 @@ public class WebCrawler {
 
         private ArrayList<String> getChildrenData() {
             return childrenData;
-        }
-
-        private int getDepth() {
-            return depth;
-        }
-
-        private void setDepth(int depth) {
-            this.depth = depth;
         }
 
         public boolean nodesEqual(Object other){
